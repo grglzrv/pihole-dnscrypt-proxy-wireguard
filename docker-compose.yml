@@ -1,0 +1,69 @@
+version: "3"
+
+# Modified version of visibilityspots docker compose file for pihole + 1.1.1.1 DNS over HTTPS + Ofelia + youtube ads blocker script on a raspberrypi
+services:
+  cloudflared:
+    container_name: cloudflared
+    hostname: cloudflared
+    # Replace ARM with correct version for you device (use arm for raspberrypi)
+    image: visibilityspots/cloudflared:arm
+    restart: unless-stopped
+    networks:
+      pihole:
+        ipv4_address: 10.10.50.2
+
+  ofelia:
+    container_name: ofelia
+    image: mcuadros/ofelia:latest
+    hostname: ofelia
+    restart: unless-stopped
+    depends_on:
+      - pi-hole
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  pi-hole:
+    container_name: pi-hole
+    image: pihole/pihole
+    hostname: pihole
+    restart: unless-stopped
+    # Web panel will be at http://<your pi's ip>:8000 Set your devices or routers DNS to your pi's ip
+    ports:
+      - "8000:80/tcp"
+      - "53:53/tcp"
+      - "53:53/udp"
+    environment:
+      - ServerIP=10.10.50.3
+      - DNS1='10.10.50.2#5054'
+      - DNS2=''
+      - IPv6=false
+      - TZ=UTC
+      - DNSMASQ_LISTENING=all
+    # Replace PASSWORD with a password for the pihole admin panel
+      - WEBPASSWORD=toor
+    networks:
+      pihole:
+        ipv4_address: 10.10.50.3
+    # Config files are bound to /home/pi/pihone on your raspberrypi, if your using a different device other than a raspberry pi change it to somewhere else
+    volumes:
+      - './etc-pihole/:/etc/pihole/'
+      - './etc-dnsmasq.d/:/etc/dnsmasq.d/'
+      - './youTube_ads_4_pi-hole/:/root/youTube_ads_4_pi-hole/'
+    # This is for the pihole container dns you dont need to change it
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+    cap_add:
+      - NET_ADMIN
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.youTube_ads_4_pi.schedule: "@every 1h"
+      ofelia.job-exec.youTube_ads_4_pi.command: "/root/youTube_ads_4_pi-hole/youtube.sh"
+
+networks:
+  pihole:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.10.50.0/29
