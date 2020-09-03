@@ -1,1 +1,1 @@
-# pihole-cloudflared-ofelia-youtube_ads_blocker
+# Pihole + DNSCrypt-proxy + WireGuard VPN + Ofelia and youtube_ads_blocker
