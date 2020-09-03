@@ -1,12 +1,39 @@
 version: "3"
 
-# Modified version of visibilityspots docker compose file for pihole + 1.1.1.1 DNS over HTTPS + Ofelia + youtube ads blocker script on a raspberrypi
+# Docker compose file with Pihole + DNSCrypt Proxy (1.1.1.2 DNS over HTTPS) + WireGuard VPN + Ofelia + youtube ads blocker script on a Raspberry Pi 4 (armv7)
 services:
-  cloudflared:
-    container_name: cloudflared
-    hostname: cloudflared
+  wireguard:
+    image: lazarovg/wireguard:armv7
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Sofia
+      - SERVERURL=<YOUR EXTERNAL IP>
+      - SERVERPORT=51820
+      - PEERS=10
+      - PEERDNS=10.10.50.3
+      - INTERNAL_SUBNET=10.10.50.0
+    volumes:
+      - ~/wireguard/config:/config
+      - /lib/modules:/lib/modules
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    networks:
+      pihole:
+        ipv4_address: 10.10.50.4
+
+  dnscrypt-proxy:
+    container_name: dnscrypt-proxy
+    hostname: dnscrypt-proxy
     # Replace ARM with correct version for you device (use arm for raspberrypi)
-    image: visibilityspots/cloudflared:arm
+    image: lazarovg/dnscrypt-proxy:cloudflare-malware-armv7
     restart: unless-stopped
     networks:
       pihole:
@@ -14,7 +41,7 @@ services:
 
   ofelia:
     container_name: ofelia
-    image: mcuadros/ofelia:latest
+    image: lazarovg/ofelia:armv7
     hostname: ofelia
     restart: unless-stopped
     depends_on:
@@ -58,8 +85,10 @@ services:
       - NET_ADMIN
     labels:
       ofelia.enabled: "true"
-      ofelia.job-exec.youTube_ads_4_pi.schedule: "@every 1h"
+      ofelia.job-exec.youTube_ads_4_pi.schedule: "@every 3h"
       ofelia.job-exec.youTube_ads_4_pi.command: "/root/youTube_ads_4_pi-hole/youtube.sh"
+      ofelia.job-exec.pihole_update_gravity.schedule: "@every 4h"
+      ofelia.job-exec.pihole_update_gravity.command: "pihole -g"
 
 networks:
   pihole:
