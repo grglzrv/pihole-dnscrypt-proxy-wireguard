@@ -1,6 +1,0 @@
-# Ignore all .db files
-
-.gravity.db
-./etc-pihole/gravity.db
-etc-pihole/gravity.db
-*.db
