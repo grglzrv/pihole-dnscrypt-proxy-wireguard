@@ -55,7 +55,7 @@ services:
     image: pihole/pihole
     hostname: pihole
     restart: unless-stopped
-    # Web panel will be at http://<your pi's ip>:8000 Set your devices or routers DNS to your pi's ip
+    # Web panel will be at http://<your pi's ip>:8000/admin Set your devices or routers DNS to your pi's ip
     ports:
       - "8000:80/tcp"
       - "53:53/tcp"
@@ -68,7 +68,7 @@ services:
       - TZ=UTC
       - DNSMASQ_LISTENING=all
     # Replace PASSWORD with a password for the pihole admin panel
-      - WEBPASSWORD=toor
+      - WEBPASSWORD=PASSWORD
     networks:
       pihole:
         ipv4_address: 10.10.50.3
