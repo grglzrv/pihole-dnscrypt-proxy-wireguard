@@ -1,1 +1,4 @@
+# Ignore all .db files
+
+.gravity.db
 *.db
